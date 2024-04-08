@@ -1,12 +1,7 @@
 from binance import Client
 from datetime import datetime
 import pandas as pd
-import backtrader as bt
-
-# API Key: HIEj9iosnrLJGPCgg1NtmAaoIeA6VFBJN1ESmpnBcEBWRCjSfzj9e87k5NCfcQyq
-
-# Secret Key: DshpXwXA1LHKgEHADj4gRDMEHd7PF8FxdzXGyz4Ic1tJQamX0hccpAgHN8bIgxfV
-
+import tti
 def get_historic_dates(symbol, interval, fecha_inicial_str, fecha_actual_str):
 
     historical_klines = client.get_historical_klines(symbol, interval, fecha_inicial_str, fecha_actual_str)
@@ -15,62 +10,6 @@ def get_historic_dates(symbol, interval, fecha_inicial_str, fecha_actual_str):
     df = pd.DataFrame(historical_klines, columns=columns)
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
     return df
-
-# def strategyBollinger(hitoric_dates, saldo, symbol):
-
-
-#     def __init__(self):
-#         params = (
-#             ("period", 20),
-#             ("devfactor", 2),
-#         )
-
-#         self.dataclose = hitoric_dates['close'][0]
-#         self.sma = bt.indicators.SimpleMovingAverage(self.dataclose, period=self.params.period)
-#         self.stddev = bt.indicators.StandardDeviation(self.dataclose, period=self.params.period)
-#         self.bollinger_top_band = self.sma + self.params.devfactor * self.stddev
-#         self.bollinger_low_band = self.sma - self.params.devfactor * self.stddev
-
-#     global cantidad_transacciones
-
-    
-#     if self.dataclose < self.bollinger_low_band:
-#         print('compro')
-#         saldo =- pd.DataFrame(client.get_recent_trades(symbol = 'SOLUSDT'))['price'][0]
-#         cantidad_transacciones += 1
-
-#     elif dataclose > bollinger_top_band:
-#         print('vendo')
-#         saldo =+ pd.DataFrame(client.get_recent_trades(symbol = 'SOLUSDT'))['price'][0]
-#         cantidad_transacciones += 1
-
-class BollingerStrategy(bt.Strategy):
-
-    params = (
-        ("period", 20),
-        ("devfactor", 2),
-    )
-
-    def __init__(self):
-
-        self.dataclose = self.datas[0].close
-        self.sma = bt.indicators.SimpleMovingAverage(self.dataclose, period=self.params.period)
-        self.stddev = bt.indicators.StandardDeviation(self.dataclose, period=self.params.period)
-        self.bollinger_top_band = self.sma + self.params.devfactor * self.stddev
-        self.bollinger_low_band = self.sma - self.params.devfactor * self.stddev
-
-    def next(self):
-        global cantidad_transacciones
-
-        if not self.position:
-            if self.dataclose < self.bollinger_low_band:
-                self.buy()
-                cantidad_transacciones += 1
-
-        elif self.dataclose > self.bollinger_top_band:
-            self.sell()
-            cantidad_transacciones += 1
-
 
 
 ################################# CONNECT ################################################
@@ -94,14 +33,29 @@ saldo = 100000.00
 
 hitoric_dates = get_historic_dates(symbol, interval, fecha_inicial_str, fecha_actual_str)
 
+candles = client._historical_klines(symbol, interval)
 
+data =pd.DataFrame( candles, columns=['open time', 'Open price', 'High price', 'Low price', 'Close', 'Volume', 'Close time', 'Asset volume', 'Number of trades', 'Taker volume', 'Maker volume', 'nothing'] )
 
-print(saldo)
+data['Datetime'] = pd.DatetimeIndex(pd.to_datetime(data['Close time'], unit='ms'))
+data['Open price'] = data['Open price'].astype('float')
+data['High price'] = data['High price'].astype('float')
+data['Low price'] = data['Low price'].astype('float')
+data['Close'] = data['Close'].astype('float')
+data['Volume'] = data['Volume'].astype('float')
+data['Close time'] = pd.DatetimeIndex(pd.to_datetime(data['Close time'], unit='ms'))
+data['Asset volume'] = data['Asset volume'].astype('float')
+data['Number of trades'] = data['Number of trades'].astype('float')
+data['Taker volume'] = data['Taker volume'].astype('float')
+data['Maker volume'] = data['Maker volume'].astype('float')
+data['nothing'] = data['nothing'].astype('float')
 
-# Convierte el timestamp de UNIX a formato de fecha legible
+data = data.set_index('Datetime')
 
-# Muestra el DataFrame con los datos históricos
+ma = tti.indicators.MovingAverage(input_data=data, period=20, ma_type='simple')
+bb = tti.indicators.BollingerBands(input_data=data, period=20, std_number=2, fill_missing_values=True)
+rsi = tti.indicators.RelativeStrengthIndex(input_data=data, period=14, fill_missing_values=True)
 
-# info = pd.DataFrame(client.get_historical_trades(symbol=symbol))
+print(ma.getTiData())
+print(bb.getTiData())
 
-# print(info)
