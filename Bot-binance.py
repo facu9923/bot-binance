@@ -2,6 +2,10 @@ from binance import Client
 from datetime import datetime
 import pandas as pd
 import tti
+import time
+from telegram import Bot
+import asyncio
+
 def get_historic_dates(symbol, interval, fecha_inicial_str, fecha_actual_str):
 
     historical_klines = client.get_historical_klines(symbol, interval, fecha_inicial_str, fecha_actual_str)
@@ -31,17 +35,51 @@ def getDataFrame():
 
     return data
 
-def run(saldo, ma, bb, rsi):
+async def run(saldo, ma, bb, rsi, tiempo_inicial, tiempo_limite, df):
     sobreventa = 50
     sobrecompra = 20
+
+    
     while True:
-        print('ejec')
+        time.sleep(2)
+        if (time.time() - tiempo_inicial >= tiempo_limite):
+            print('tiempo finalizado')
+            return saldo
+        else:
+            if (df.iloc[-1]['close'] < bb.getTiData().iloc[-1]['lower_band']):
+                print('compro')
+
+                saldo -= df.iloc[-1]['close']
+            else:
+                if (df.iloc[-1]['close'] > bb.getTiData().iloc[-1]['upper_band']):
+                    print('vendo')
+                    saldo += df.iloc[-1]['close']
+                
+            if (df.iloc[-1]['close'] > ma.getTiData().iloc[-1]['ma-simple']):
+                print('vendo')
+                saldo += df.iloc[-1]['close']
+            else:
+                if (df.iloc[-1]['close'] < ma.getTiData().iloc[-1]['ma-simple']):
+                    print('compro')
+                    await enviar_mensaje(chat_id='6839920601', mensaje='Compro accion')
+                    saldo -= df.iloc[-1]['close']
+                    print(saldo)
         
+async def enviar_mensaje(chat_id, mensaje):
+    await bot.send_message(chat_id=chat_id, text=mensaje)
+
 ################################# CONNECT ################################################
 key = 'pXybkp3SAJGjQD3IgrIF7C6QOB1IauVZB0InO2SBIczMZSyLmPqsTXp64piCgPcY'
 secret = 'BAJbHHjl9tofmxyrn416RvUgbG24gnC9UHsMpFqtuHRo54KBAbSGUtG9pOTDAZgUY'
 
 client = Client(key, secret)
+
+TOKEN = '6404398205:AAEjHkAn6q8fOyV14LrjtmX9MI_oeGJhXVQ'
+
+# Crear una instancia del bot
+bot = Bot(token=TOKEN)
+
+# Método para enviar
 ##########################################################################################
 
 interval = Client.KLINE_INTERVAL_1DAY
@@ -55,7 +93,7 @@ fecha_inicial_str = fecha_inicial.strftime('%d %b, %Y')
 fecha_actual_str = fecha_actual.strftime('%d %b, %Y')
 
 saldo = 100000.00
-
+saldo_inicial = saldo
 ##hitoric_dates = get_historic_dates(symbol, interval, fecha_inicial_str, fecha_actual_str)
 
 candles = client._historical_klines(symbol, interval)
@@ -67,9 +105,12 @@ ma = tti.indicators.MovingAverage(input_data=df, period=20, ma_type='simple')
 bb = tti.indicators.BollingerBands(input_data=df, period=20, std_number=2, fill_missing_values=True)
 rsi = tti.indicators.RelativeStrengthIndex(input_data=df, period=14, fill_missing_values=True)
 
-##run(saldo, ma, bb, rsi)
+tiempo_inicial = time.time()
+tiempi_limite = 10
 
-print(saldo)
-print(rsi.getTiData())
-print(rsi.getTiGraph().show())
+saldo = asyncio.run(run(saldo=saldo, ma=ma, bb=bb, rsi=rsi, tiempo_inicial=tiempo_inicial, tiempo_limite=tiempi_limite, df=df))
+
+diferencia = saldo-saldo_inicial
+
+print('el saldo es: ' + str(saldo) + ' por lo tanto la diferencia es de: ' + str(diferencia))
 
