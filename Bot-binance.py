@@ -35,16 +35,24 @@ def getDataFrame():
 
     return data
 
-async def run(saldo, ma, bb, rsi, tiempo_inicial, tiempo_limite, df):
+def createMensaje(action, symbol, df):
+    precio = df.iloc[-1]['close']
+    toReturn = 'se realiza la ' + action + ' del simbolo ' + symbol + ' al precio de ' + str(precio)
+    return toReturn
+
+async def run(saldo, ma, bb, rsi, tiempo_inicial, tiempo_limite, df, symbol):
     sobreventa = 50
     sobrecompra = 20
 
-    
-    while True:
+    await enviar_mensaje(chat_id='6839920601', mensaje='Se inicia nuevo siclo de compra y venta')
+
+    isValid = True
+    while isValid:
         time.sleep(2)
         if (time.time() - tiempo_inicial >= tiempo_limite):
             print('tiempo finalizado')
-            return saldo
+            time.sleep(5)
+            isValid = False
         else:
             if (df.iloc[-1]['close'] < bb.getTiData().iloc[-1]['lower_band']):
                 print('compro')
@@ -61,10 +69,11 @@ async def run(saldo, ma, bb, rsi, tiempo_inicial, tiempo_limite, df):
             else:
                 if (df.iloc[-1]['close'] < ma.getTiData().iloc[-1]['ma-simple']):
                     print('compro')
-                    await enviar_mensaje(chat_id='6839920601', mensaje='Compro accion')
+                    await enviar_mensaje(chat_id='6839920601', mensaje=createMensaje(action='compra',symbol= symbol, df=df))
                     saldo -= df.iloc[-1]['close']
                     print(saldo)
-        
+    return saldo
+
 async def enviar_mensaje(chat_id, mensaje):
     await bot.send_message(chat_id=chat_id, text=mensaje)
 
@@ -108,7 +117,7 @@ rsi = tti.indicators.RelativeStrengthIndex(input_data=df, period=14, fill_missin
 tiempo_inicial = time.time()
 tiempi_limite = 10
 
-saldo = asyncio.run(run(saldo=saldo, ma=ma, bb=bb, rsi=rsi, tiempo_inicial=tiempo_inicial, tiempo_limite=tiempi_limite, df=df))
+saldo = asyncio.run(run(saldo=saldo, ma=ma, bb=bb, rsi=rsi, tiempo_inicial=tiempo_inicial, tiempo_limite=tiempi_limite, df=df, symbol=symbol))
 
 diferencia = saldo-saldo_inicial
 
