@@ -78,12 +78,12 @@ async def enviar_mensaje(chat_id, mensaje):
     await bot.send_message(chat_id=chat_id, text=mensaje)
 
 ################################# CONNECT ################################################
-key = 'pXybkp3SAJGjQD3IgrIF7C6QOB1IauVZB0InO2SBIczMZSyLmPqsTXp64piCgPcY'
-secret = 'BAJbHHjl9tofmxyrn416RvUgbG24gnC9UHsMpFqtuHRo54KBAbSGUtG9pOTDAZgUY'
+key = ''
+secret = ''
 
 client = Client(key, secret)
 
-TOKEN = '6404398205:AAEjHkAn6q8fOyV14LrjtmX9MI_oeGJhXVQ'
+TOKEN = ''
 
 # Crear una instancia del bot
 bot = Bot(token=TOKEN)
