@@ -44,7 +44,7 @@ async def run(saldo, ma, bb, rsi, tiempo_inicial, tiempo_limite, df, symbol):
     sobreventa = 50
     sobrecompra = 20
 
-    await enviar_mensaje(chat_id='6839920601', mensaje='Se inicia nuevo siclo de compra y venta')
+    await enviar_mensaje(chat_id='', mensaje='Se inicia nuevo siclo de compra y venta')
 
     isValid = True
     while isValid:
@@ -69,7 +69,7 @@ async def run(saldo, ma, bb, rsi, tiempo_inicial, tiempo_limite, df, symbol):
             else:
                 if (df.iloc[-1]['close'] < ma.getTiData().iloc[-1]['ma-simple']):
                     print('compro')
-                    await enviar_mensaje(chat_id='6839920601', mensaje=createMensaje(action='compra',symbol= symbol, df=df))
+                    await enviar_mensaje(chat_id='', mensaje=createMensaje(action='compra',symbol= symbol, df=df))
                     saldo -= df.iloc[-1]['close']
                     print(saldo)
     return saldo
